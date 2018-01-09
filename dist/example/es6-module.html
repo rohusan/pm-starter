@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>ES6 Intro</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="../css/style.css">
+		<meta property="og:type" content="website">
+		<meta property="og:title" content="ES6 Intro">
+		<meta property="og:description" content="Short introduction to es6.">
+		<!-- <meta property="og:site_name" content="Starter Template for bulma"> -->
+	<script type="module">
+		import {addTextToBody} from '../js/es6-module.js';
+		addTextToBody('Success!!! Your Browser loads modules!');
+	</script>
+	<script nomodule>
+		alert("Your browser doesn't support module loading.")
+	</script>
+  </head>
+  <body>
+
+		<section class="hero is-primary">
+			<div class="hero-body">
+				<div class="container">
+					<h1 class="title">
+					ES6 Intro
+					</h1>
+					<h2 class="subtitle">
+					Some ressources and module load checking
+					</h2>
+				</div>
+			</div>
+		</section>
+
+		<section class="section">
+			<div class="tile is-ancestor">
+				<div class="tile">
+					<div class="tile is-parent">
+						<article class="tile is-child notification is-info">
+							<p class="title">ES6?</p>
+							<p class="subtitle">6th edition - ECMAScript 2015</p>
+							<a href="https://github.com/DrkSephy/es6-cheatsheet" class="button" target="_blank">Cheatsheet</a><br><br>
+							<p class="xsubtitle">Wikipedia: The Sixth Edition, initially known as ECMAScript 6 (ES6) and later renamed to ECMAScript 2015 (ES2015) adds significant new syntax for writing complex applications, including classes and modules, but defines them semantically in the same terms as ECMAScript 5 strict mode. Other new features include iterators and for/of loops, Python-style generators and generator expressions, arrow functions, binary data, typed arrays, collections (maps, sets and weak maps), promises, number and math enhancements, reflection, and proxies (metaprogramming for virtual objects and wrappers). As the first "ECMAScript Harmony" specification, it is also known as "ES6 Harmony."</p>
+							
+						</article>
+					</div>
+				</div>
+
+				<div class="tile">
+					<div class="tile is-parent">
+						<article class="tile is-child notification is-primary">
+							<p class="title">ES6 Module</p>
+							<p class="subtitle">How is module loading supported by browser?</p>
+							<a class="button" href="https://jakearchibald.com/2017/es-modules-in-browsers/" target="_blank">Have a look</a>
+						</article>
+					</div>
+				</div>
+				<div class="tile">
+					<div class="tile is-parent">
+						<article class="tile is-child notification is-warning">
+							<p class="title">Test</p>
+							<p class="subtitle">Trying to load a module...</p>
+							<p id="jsSzReplace">Failed! Module not loaded. Did you enable module loading in FF (about:config, dom.moduleScripts.enabled)?</p>
+						</article>
+					</div>
+				</div>
+			</div>
+		</section>
+  </body>
+</html>

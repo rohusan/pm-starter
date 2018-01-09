@@ -1,0 +1,105 @@
+<html>
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>Guide: Content</title>
+		<!-- <link rel="stylesheet" href="../css/editor.css"> -->
+		<style>
+			#jsEditor {
+				border: 1px solid green;
+				/* pm requirement! Otherwise ff shows problems with spaces */
+				/* https://github.com/ProseMirror/prosemirror/issues/651 */
+				white-space: pre-wrap;
+				width: 50vW;
+				font-size: 5rem;
+				color: orange;
+			}
+			.szProblem {
+				color: white;
+				background-color: red;
+				padding: 1em;
+			}
+			.szQuestion {
+				color: white;
+				background-color: green;
+				padding: 1em;
+			}
+		</style>
+	</head>
+	<body>
+		<h1 class="title">Guide: Content</h1>
+
+<p>A state's document lives under its doc property. This is a read-only data structure, representing the document as a hierarchy of nodes, somewhat like the browser DOM. A simple document might be a "doc" node containing two "paragraph" nodes, each containing a single "text" node. You can read more about the document data structure in the guide about it.</p>
+
+<p>When initializing a state, you can give it an initial document to use. In that case, the schema field is optional, since the schema can be taken from the document.</p>
+
+<p>Here we initialize a state by parsing the content found in the DOM element with the ID "content", using the DOM parser mechanism, which uses information supplied by the schema about which DOM nodes map to which elements in that schema:</p>
+
+<pre>
+import {DOMParser} from "prosemirror-model"
+import {EditorState} from "prosemirror-state"
+import {schema} from "prosemirror-schema-basic"
+
+let dom = document.getElementById('jsEditor')
+let state = EditorState.create({
+  doc: DOMParser.fromSchema(schema).parse(dom),
+  schema,
+  plugins: [
+    history(),
+    keymap({"Mod-z": undo, "Mod-y": redo, "Mod-shift-z": redo}),
+    keymap(baseKeymap)
+  ]
+})
+let view = new EditorView({mount: dom}, {state})
+</pre>
+
+		<h2>Editor</h2>
+		<div id="jsEditor">Das <i>ist</i> ein <b>Text</b></div>
+		<script src="../js/basic2-core.js"></script>
+		<script>
+			(function(
+				EditorState,
+				EditorView,
+				Schema,
+				DOMParser,
+				schema,
+				addListNodes,
+				exampleSetup,
+				undo,
+				redo,
+				history,
+				keymap,
+				baseKeymap
+			)
+			{
+				let dom = document.getElementById('jsEditor')
+				let state = EditorState.create({
+				  doc: DOMParser.fromSchema(schema).parse(dom),
+				  schema,
+				  plugins: [
+				    history(),
+				    keymap({"Mod-z": undo, "Mod-y": redo, "Mod-shift-z": redo}),
+				    keymap(baseKeymap)
+				  ]
+				})
+				let view = new EditorView({mount: dom}, {state})
+			})
+			(
+				pm.EditorState,
+				pm.EditorView,
+				pm.schema_model,
+				pm.DOMParser,
+				pm.schema_basic,
+				pm.addListNodes,
+				pm.exampleSetup,
+				pm.undo,
+				pm.redo,
+				pm.history,
+				pm.keymap,
+				pm.baseKeymap
+			)
+		</script>
+
+	</body>
+</html>

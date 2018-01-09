@@ -1,0 +1,28 @@
+{
+  "name": "PMExample",
+  "version": "1.0.0",
+  "repository": {},
+  "description": "Build process of PM examples",
+  "main": "index.js",
+  "dependencies": {
+    "prosemirror-example-setup": "^1.0.1",
+    "prosemirror-model": "^1.0.1",
+    "prosemirror-schema-basic": "^1.0.0",
+    "prosemirror-schema-list": "^1.0.0",
+    "prosemirror-state": "^1.0.2",
+    "prosemirror-view": "^1.0.6"
+  },
+  "devDependencies": {
+    "rollup": "^0.53.3",
+    "rollup-plugin-buble": "^0.18.0",
+    "rollup-plugin-commonjs": "^8.2.6",
+    "rollup-plugin-node-resolve": "^3.0.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build-basic1": "rollup -c rollup/basic1.config.js",
+    "build-basic2": "rollup -c rollup/basic2.config.js"
+  },
+  "author": "",
+  "license": "ISC"
+}

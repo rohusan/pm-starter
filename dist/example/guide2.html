@@ -1,0 +1,72 @@
+<html>
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>Guide: Transactions</title>
+		<style>
+			#jsEditor {
+				border: 1px solid green;
+			}
+			.szProblem {
+				color: white;
+				background-color: red;
+				padding: 1em;
+			}
+			.szQuestion {
+				color: white;
+				background-color: green;
+				padding: 1em;
+			}
+		</style>
+	</head>
+	<body>
+		<h1 class="title">Guide: Transactions</h1>
+
+<p>When the user types, or otherwise interacts with the view, it generates ‘state transactions’. What that means is that it does not just modify the document in-place and implicitly update its state in that way. Instead, every change causes a transaction to be created, which describes the changes that are made to the state, and can be applied to create a new state, which is then used to update the view.</p>
+
+<p>By default this all happens under the cover, but you can hook into by writing plugins or configuring your view. For example, this code adds a dispatchTransaction prop, which will be called whenever a transaction is created:</p>
+
+<pre>
+// (Imports omitted)
+
+let dom = document.getElementById('jsEditor')
+let state = EditorState.create({schema})
+let view = new EditorView(dom, {
+  state,
+  dispatchTransaction(transaction) {
+    console.log("Document size went from", transaction.before.content.size,
+                "to", transaction.doc.content.size)
+    let newState = view.state.apply(transaction)
+    view.updateState(newState)
+  }
+})
+</pre>
+
+<p>Every state update has to go through updateState, and every normal editing update will happen by dispatching a transaction.</p>
+
+
+
+		<h2>Editor</h2>
+		<p id="jsEditor"></p>
+		<script src="../js/basic2-core.js"></script>
+		<script>
+			(function(EditorState, EditorView, Schema, DOMParser, schema, addListNodes, exampleSetup)
+			{
+				let oDom = document.getElementById('jsEditor')
+				let state = EditorState.create({schema})
+				let view = new EditorView(oDom, {
+				  state,
+				  dispatchTransaction(transaction) {
+				    console.log("Document size went from", transaction.before.content.size,
+				                "to", transaction.doc.content.size)
+				    let newState = view.state.apply(transaction)
+				    view.updateState(newState)
+				  }
+				})
+
+			})(pm.EditorState, pm.EditorView, pm.schema_model, pm.DOMParser, pm.schema_basic, pm.addListNodes, pm.exampleSetup)
+		</script>
+
+	</body>
+</html>

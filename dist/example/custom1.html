@@ -1,0 +1,88 @@
+<html>
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>Custom: Editor View container</title>
+		<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic">
+		<link rel="stylesheet" href="//cdn.rawgit.com/necolas/normalize.css/master/normalize.css">
+		<link rel="stylesheet" href="//cdn.rawgit.com/milligram/milligram/master/dist/milligram.min.css">
+
+		<style>
+			#jsEditor {
+				border: 1px solid green;
+			}
+			.ProseMirror {
+				white-space: pre-wrap;
+			}
+
+
+			.szProblem {
+				color: white;
+				background-color: red;
+				padding: 1em;
+			}
+			.szQuestion {
+				color: white;
+				background-color: green;
+				padding: 1em;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<h1 class="title">Custom: Editor View container</h1>
+			<h2>Problem</h2>
+			<p class="szProblem">
+				PM Viewer appends two additional dom nodes to the editable element.
+			</p>
+			<pre>
+ 
+ &lt;p id="jsEditor"&gt;
+   &lt;div class="ProseMirror" contenteditable="true"&gt;
+     &lt;p&gt;
+       &lt;br&gt;
+     &lt;/p&gt;
+   &lt;/div&gt;
+ &lt;p&gt;
+			</pre>
+
+			<p class="szQuestion">
+				How can we get rid of those aditional wrappers? Let's say I want a 'p' element to be editable with no addiditonal conatiners appended by prosemirror, is this possible?
+			</p>
+			<pre>
+ 
+ &lt;p id="jsEditor" class="ProseMirror" contenteditable="true"&gt;&lt;p&gt;
+			</pre>
+
+
+
+
+			<h2>Solution</h2>
+			<ol>
+				<li>Use mount: new EditorView(<b>{ mount: oDomEdit}</b>, {state: oState}). An additional block element 'p' is still appended.</li>
+				<li><b>Define custom Schema with Text node</b></li>
+			</ol>
+
+			<h2>Editor</h2>
+			<p id="jsEditor"></p>
+		</container>
+
+		<script src="../js/basic2-core.js"></script>
+		<script>
+			(function(EditorState, EditorView, Schema, DOMParser, schema, addListNodes, exampleSetup)
+			{
+				const oSchema = new Schema({
+					nodes: {
+						text: {},
+						doc: {content: "text*"}
+					}
+				})
+				let oDomEdit = document.getElementById('jsEditor');
+				let oState = EditorState.create({schema: oSchema})
+				let oView = new EditorView({ mount: oDomEdit}, {state: oState})
+			})(pm.EditorState, pm.EditorView, pm.schema_model, pm.DOMParser, pm.schema_basic, pm.addListNodes, pm.exampleSetup)
+		</script>
+
+	</body>
+</html>

@@ -1,0 +1,87 @@
+<html>
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width">
+		<title>Basic example splitted</title>
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+		<link rel="stylesheet" href="../css/style.css">
+		<link rel="stylesheet" href="../css/editor.css">
+		<meta property="og:type" content="website">
+		<meta property="og:title" content="Basic example splitted">
+		<meta property="og:description" content="Basic example splitted">
+		<!-- <meta property="og:site_name" content="Starter Template for bulma"> -->
+		<style>
+		</style>
+	</head>
+	<body>
+		<section class="hero is-primary">
+			<div class="hero-body">
+				<div class="container">
+					<h1 class="title">Basic example splitted</h1>
+					<h2 class="subtitle">
+					Prose Mirror core bundled in one file separated from basic code
+					</h2>
+				</div>
+			</div>
+		</section>
+
+
+		<section class="section">
+			<div class="tile is-ancestor">
+				<div class="tile">
+					<div class="tile is-parent">
+						<article class="tile is-child notification is-info">
+							<ul>
+								<li>build core: npm run build-basic2 (>15s on my system)</li>
+								<li>src/basic2.js</li>
+								<li>rollup/basic2.config.js</li>
+								<li>PM core is compiled to file dist/js/basic2.js</li>
+								<li>Javascript programm within basic2.html, it's the playground</li>
+								<li>Build process not needed, just change js in playground</li>
+							</ul>
+						</article>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<div id=editor style="margin-bottom: 23px"></div>
+		<div style="display: none" id="content">
+		  <h3>Hello ProseMirror</h3>
+		  <p>This is editable text. You can focus it and start typing.</p>
+		  <p>To apply styling, you can select a piece of text and manipulate
+		  its styling from the menu. The basic schema
+		  supports <em>emphasis</em>, <strong>strong
+		  text</strong>, <a href="http://marijnhaverbeke.nl/blog">links</a>, <code>code
+		  font</code>, and <img src="../media/smiley.png"> images.</p>
+		  <p>Block-level structure can be manipulated with key bindings (try
+		  ctrl-shift-2 to create a level 2 heading, or enter in an empty
+		  textblock to exit the parent block), or through the menu.</p>
+		  <p>Try using the “list” item in the menu to wrap this paragraph in
+		  a numbered list.</p>
+		</div>
+
+		<script src="../js/basic2-core.js"></script>
+		<script>
+			(function(EditorState, EditorView, Schema, DOMParser, schema, addListNodes, exampleSetup)
+			{
+				// Mix the nodes from prosemirror-schema-list into the basic schema to
+				// create a schema with list support.
+				const mySchema = new Schema({
+				  nodes: addListNodes(schema.spec.nodes, "paragraph block*", "block"),
+				  marks: schema.spec.marks
+				})
+
+				window.view = new EditorView(document.querySelector("#editor"), {
+				  state: EditorState.create({
+				    doc: DOMParser.fromSchema(mySchema).parse(document.querySelector("#content")),
+				    plugins: exampleSetup({schema: mySchema})
+				  })
+				})
+			})(pm.EditorState, pm.EditorView, pm.schema_model, pm.DOMParser, pm.schema_basic, pm.addListNodes, pm.exampleSetup)
+		</script>
+
+	</body>
+</html>

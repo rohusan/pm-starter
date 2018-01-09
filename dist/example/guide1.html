@@ -1,0 +1,57 @@
+<html>
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>Guide: My first editor</title>
+	</head>
+	<style>
+		#jsEditor {
+			border: 1px solid green;
+		}
+	</style>
+	<body>
+		<h1 class="title">Guide: My first editor</h1>
+<p>The lego pieces fit together like this to create a very minimal editor:</p>
+
+<pre>
+import {schema} from "prosemirror-schema-basic"
+import {EditorState} from "prosemirror-state"
+import {EditorView} from "prosemirror-view"
+
+let oDomEdit = document.getElementById('jsEditor');
+let oState = EditorState.create({schema})
+let oView = new EditorView(oDomEdit, {state: oState})
+</pre>
+
+<p>ProseMirror requires you to specify a schema that your document conforms to, so the first thing this does is import a module with a basic schema in it.</p>
+
+<p>That schema is then used to create a state, which will generate an empty document conforming to the schema, and a default selection at the start of that document. Finally, a view is created for the state, and appended to document.body. This will render the state's document as an editable DOM node, and generate state transactions whenever the user types into it.</p>
+
+<p>The editor isn't very usable yet. If you press enter, for example, nothing happens, because the core library has no opinion on what enter should do. We'll get to that in a moment.</p>
+
+
+
+
+		<h2>Editor</h2>
+		<p id="jsEditor"></p>
+
+		<script src="../js/basic2-core.js"></script>
+		<script>
+			(function(EditorState, EditorView, Schema, DOMParser, schema, addListNodes, exampleSetup)
+			{
+				let oDomEdit = document.getElementById('jsEditor');
+				let oState = EditorState.create({schema})
+				let oView = new EditorView(oDomEdit, {state: oState})
+
+			})(pm.EditorState, pm.EditorView, pm.schema_model, pm.DOMParser, pm.schema_basic, pm.addListNodes, pm.exampleSetup)
+		</script>
+
+		<ul>
+			<li>Whitespaces ist not working (space/enter/tab)</li>
+			<li>PM Viewer appends two additional dom nodes to the editable element:</li>
+		</ul>
+		<pre>&lt;div class="ProseMirror" contenteditable="true"&gt;&lt;p&gt;&lt;br&gt;&lt;/p&gt;&lt;/div&gt;</pre>
+
+	</body>
+</html>

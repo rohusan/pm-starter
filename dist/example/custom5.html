@@ -1,0 +1,194 @@
+
+<html>
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>Custom: Restrict inline tags</title>
+		<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic">
+		<link rel="stylesheet" href="//cdn.rawgit.com/necolas/normalize.css/master/normalize.css">
+		<link rel="stylesheet" href="//cdn.rawgit.com/milligram/milligram/master/dist/milligram.min.css">
+
+		<style>
+			.jsEditor {
+				border: 1px dotted green;
+				/*font-size: 3em;*/
+				color: #555;
+			}
+			.jsEditor strong {
+				color: red;
+			}
+			.jsEditor em {
+				color: orange;
+			}
+			.ProseMirror {
+				white-space: pre-wrap;
+			}
+
+
+			.szProblem {
+				color: white;
+				background-color: red;
+				padding: 1em;
+			}
+			.szQuestion {
+				color: white;
+				background-color: green;
+				padding: 1em;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<h1 class="title">Custom: Restrict inline tags</h1>
+
+			<p class="szQuestion">
+				How simple is it to restrict inline tags for each element?
+			</p>
+
+			<h2>Simple enough</h2>
+			<ol>
+				<li>This example defines allowed inline tags with attribute data-pm</li>
+				<li>Make sure to return false for a command if not used.</li>
+				<li>Always asign keymap or usability get's odd when eg. ctrl-b opens browser history!</li>
+			</ol>
+
+
+			<h2 class="jsEditor" data-pm=["strong"]>(strong) Edit <strong>title</strong></h2>
+			<h3 class="jsEditor" data-pm=["em"]>(em) Edit <em>Subtitle</em></h3>
+			<p class="jsEditor" data-pm=["em","strong","br"]>(em, strong, br) Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.<br><strong>Lorem ipsum dolor</strong> sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. <em>Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.</em></p>
+			<p class="jsEditor" data-pm=["br"]>(br) Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum.<br> Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua.<br> At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.</p>
+
+		</div>
+
+		<script src="../js/basic2-core.js"></script>
+		<script>
+			(function(
+				EditorState,
+				EditorView,
+				Schema,
+				DOMParser,
+				schema,
+				addListNodes,
+				exampleSetup,
+				undo,
+				redo,
+				history,
+				keymap,
+				baseKeymap,
+				chainCommands,
+				exitCode,
+				toggleMark
+			)
+			{
+				const oDef = {
+					nodes: {
+				// ***********************************************
+				// ***************** Definitions *****************
+				// ***********************************************
+						doc: {content: "inline*"},
+						text: { group: "inline"},
+						soft_break: {
+							inline: true,
+							group: "inline",
+							selectable: false,
+							parseDOM: [{tag: "br"}],
+							toDOM() { return ["br"] }
+						}
+					},
+					marks: {
+						strong: {
+							parseDOM: [
+								{tag: "strong"},
+								// This works around a Google Docs misbehavior where
+								// pasted content will be inexplicably wrapped in `<b>`
+								// tags with a font-weight normal.
+								{tag: "b", getAttrs: node => node.style.fontWeight != "normal" && null},
+								{style: "font-weight", getAttrs: value => /^(bold(er)?|[5-9]\d{2,})$/.test(value) && null}
+							],
+							toDOM() { return ["strong"] }
+						},
+						em: {
+							parseDOM: [{tag: "i"}, {tag: "em"}, {style: "font-style=italic"}],
+							toDOM() { return ["em"] }
+						}
+					}
+				};
+
+				let aDomEdit = document.getElementsByClassName('jsEditor');
+
+				// ***********************************************
+				// ***************** Initialize ******************
+				// ***********************************************
+
+				let fnInit = function(oDomEdit, aTag)
+				{
+					let oSchema = fnBuildSchema(aTag);
+					let oFnCmd = {
+						'newline': function(oState, fnDispatch)
+						{
+							if ( oSchema.nodes.soft_break === undefined ) { return false; }
+							let oNode = oSchema.nodes['soft_break'].create();
+							let oTransaction = oState.tr.replaceSelectionWith(oNode).scrollIntoView();
+							fnDispatch(oTransaction);
+							return true;
+						}
+					}
+
+					let oState = EditorState.create({
+						doc: DOMParser.fromSchema(oSchema).parse(oDomEdit),
+						schema: oSchema,
+						plugins: [
+							history(),
+							keymap({
+								"Mod-z": undo,
+								"Mod-y": redo,
+								"Mod-shift-z": redo,
+								"Enter": chainCommands(exitCode, oFnCmd.newline),
+								"Mod-b": oSchema.marks.strong ? toggleMark(oSchema.marks.strong) : false,
+								"Mod-i": oSchema.marks.em ? toggleMark(oSchema.marks.em) : false
+							}),
+						]
+					})
+					let oView = new EditorView({ mount: oDomEdit}, {state: oState})
+				}
+
+				let fnBuildSchema = function(a)
+				{
+					let o = {
+						nodes: { doc: oDef.nodes.doc, text: oDef.nodes.text },
+						marks: {}
+					}
+					a.includes('em') && (o.marks.em = oDef.marks.em );
+					a.includes('strong') && (o.marks.strong = oDef.marks.strong );
+					a.includes('br') && (o.nodes.soft_break = oDef.nodes.soft_break );
+					return new Schema(o);
+				}
+
+				Array.from(aDomEdit).forEach(function(o)
+				{
+					fnInit(o, o.dataset.pm ? o.dataset.pm : [])
+				})
+
+			})
+			(
+				pm.EditorState,
+				pm.EditorView,
+				pm.schema_model,
+				pm.DOMParser,
+				pm.schema_basic,
+				pm.addListNodes,
+				pm.exampleSetup,
+				pm.undo,
+				pm.redo,
+				pm.history,
+				pm.keymap,
+				pm.baseKeymap,
+				pm.chainCommands,
+				pm.exitCode,
+				pm.toggleMark
+			)
+		</script>
+
+	</body>
+</html>

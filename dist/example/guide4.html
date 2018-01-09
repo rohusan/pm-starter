@@ -1,0 +1,105 @@
+<html>
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>Guide: Commands</title>
+		<!-- <link rel="stylesheet" href="../css/editor.css"> -->
+		<style>
+			#jsEditor {
+				border: 1px solid green;
+				/* pm requirement! Otherwise ff shows problems with spaces */
+				/* https://github.com/ProseMirror/prosemirror/issues/651 */
+				white-space: pre-wrap;
+			}
+			.szProblem {
+				color: white;
+				background-color: red;
+				padding: 1em;
+			}
+			.szQuestion {
+				color: white;
+				background-color: green;
+				padding: 1em;
+			}
+		</style>
+	</head>
+	<body>
+		<h1 class="title">Guide: Commands</h1>
+
+<p>The undo and redo values that the previous example bound to keys are a special kind of functions called commands. Most editing actions are written as commands which can be bound to keys, hooked up to menus, or otherwise exposed to the user.</p>
+
+<p>The prosemirror-commands package provides a number of basic editing commands, along with a minimal keymap that you'll probably want to enable to have things like enter and delete do the expected thing in your editor.</p>
+
+<pre>
+// (Omitted repeated imports)
+import {baseKeymap} from "prosemirror-commands"
+
+let dom = document.getElementById('jsEditor')
+let state = EditorState.create({
+  schema,
+  plugins: [
+    history(),
+    keymap({"Mod-z": undo, "Mod-y": redo, "Mod-shift-z": redo}),
+    keymap(baseKeymap)
+  ]
+})
+let view = new EditorView(dom, {state})
+</pre>
+
+<p>At this point, you have a basically working editor.</p>
+
+<p>To add a menu, additional keybindings for schema-specific things, and so on, you might want to look into the prosemirror-example-setup package. This is a module that provides you with an array of plugins that set up a baseline editor, but as the name suggests, it is meant more as an example than as a production-level library. For a real-world deployment, you'll probably want to replace it with custom code that sets things up exactly the way you want.</p>
+
+<p class="szQuestion">Spaces don't work as expected: use whitespace pre-wrap!</p>
+
+
+
+		<h2>Editor</h2>
+		<p id="jsEditor"></p>
+		<script src="../js/basic2-core.js"></script>
+		<script>
+			(function(
+				EditorState,
+				EditorView,
+				Schema,
+				DOMParser,
+				schema,
+				addListNodes,
+				exampleSetup,
+				undo,
+				redo,
+				history,
+				keymap,
+				baseKeymap
+			)
+			{
+				let dom = document.getElementById('jsEditor')
+				let state = EditorState.create({
+				  schema,
+				  plugins: [
+				    history(),
+				    keymap({"Mod-z": undo, "Mod-y": redo, "Mod-shift-z": redo}),
+				    keymap(baseKeymap)
+				  ]
+				})
+				let view = new EditorView(dom, {state})
+			})
+			(
+				pm.EditorState,
+				pm.EditorView,
+				pm.schema_model,
+				pm.DOMParser,
+				pm.schema_basic,
+				pm.addListNodes,
+				pm.exampleSetup,
+				pm.undo,
+				pm.redo,
+				pm.history,
+				pm.keymap,
+				pm.baseKeymap
+			)
+		</script>
+
+	</body>
+</html>

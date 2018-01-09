@@ -1,0 +1,178 @@
+
+<html>
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>Custom: multiple edit instances</title>
+		<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic">
+		<link rel="stylesheet" href="//cdn.rawgit.com/necolas/normalize.css/master/normalize.css">
+		<link rel="stylesheet" href="//cdn.rawgit.com/milligram/milligram/master/dist/milligram.min.css">
+
+		<style>
+			.jsEditor {
+				border: 1px dotted green;
+				/*font-size: 3em;*/
+				color: #555;
+			}
+			.jsEditor strong {
+				color: red;
+			}
+			.jsEditor em {
+				color: orange;
+			}
+			.ProseMirror {
+				white-space: pre-wrap;
+			}
+
+
+			.szProblem {
+				color: white;
+				background-color: red;
+				padding: 1em;
+			}
+			.szQuestion {
+				color: white;
+				background-color: green;
+				padding: 1em;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<h1 class="title">Custom: Muliple edit instances</h1>
+
+			<p class="szQuestion">
+				Initialize multiple instances. What happens?
+			</p>
+
+			<h2>It works perfect!</h2>
+			<ol>
+				<li>All four elements are editable</li>
+				<li>Tab jumps to the next instance and shift-Tab returns to the last one!</li>
+				<li>History works for each element and undo/redo applies only to focused element!</li>
+			</ol>
+
+
+			<h2 class="jsEditor">Edit <strong>title</strong></h2>
+			<h3 class="jsEditor">Edit <em>Subtitle</em></h3>
+			<p class="jsEditor">Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.</p>
+			<p class="jsEditor">Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.</p>
+
+		</div>
+
+		<script src="../js/basic2-core.js"></script>
+		<script>
+			(function(
+				EditorState,
+				EditorView,
+				Schema,
+				DOMParser,
+				schema,
+				addListNodes,
+				exampleSetup,
+				undo,
+				redo,
+				history,
+				keymap,
+				baseKeymap,
+				chainCommands,
+				exitCode
+			)
+			{
+				const oSchema = new Schema({
+					nodes: {
+				// ***********************************************
+				// ***************** Definitions *****************
+				// ***********************************************
+						doc: {content: "inline*"},
+						text: { group: "inline"},
+						soft_break: {
+							inline: true,
+							group: "inline",
+							selectable: false,
+							parseDOM: [{tag: "br"}],
+							toDOM() { return ["br"] }
+						}
+					},
+					marks: {
+						strong: {
+							parseDOM: [
+								{tag: "strong"},
+								// This works around a Google Docs misbehavior where
+								// pasted content will be inexplicably wrapped in `<b>`
+								// tags with a font-weight normal.
+								{tag: "b", getAttrs: node => node.style.fontWeight != "normal" && null},
+								{style: "font-weight", getAttrs: value => /^(bold(er)?|[5-9]\d{2,})$/.test(value) && null}
+							],
+							toDOM() { return ["strong"] }
+						},
+						em: {
+							parseDOM: [{tag: "i"}, {tag: "em"}, {style: "font-style=italic"}],
+							toDOM() { return ["em"] }
+						}
+					}
+				});
+
+				let oFnCmd = {
+					'newline': function(oState, fnDispatch)
+					{
+						let oNode = oSchema.nodes['soft_break'].create();
+						let oTransaction = oState.tr.replaceSelectionWith(oNode).scrollIntoView();
+						fnDispatch(oTransaction);
+						return true;
+					}
+				}
+
+				let aPlugin = [
+					history(),
+					keymap({
+						"Mod-z": undo,
+						"Mod-y": redo,
+						"Mod-shift-z": redo,
+						"Enter": chainCommands(exitCode, oFnCmd.newline)
+					}),
+				]
+
+				let aDomEdit = document.getElementsByClassName('jsEditor');
+
+				// ***********************************************
+				// ***************** Initialize ******************
+				// ***********************************************
+
+				let fnInit = function(oDomEdit)
+				{
+					let oState = EditorState.create({
+						doc: DOMParser.fromSchema(oSchema).parse(oDomEdit),
+						schema: oSchema,
+						plugins: aPlugin
+					})
+					let oView = new EditorView({ mount: oDomEdit}, {state: oState})
+				}
+
+				Array.from(aDomEdit).forEach(function(o)
+				{
+					fnInit(o)
+				})
+
+			})
+			(
+				pm.EditorState,
+				pm.EditorView,
+				pm.schema_model,
+				pm.DOMParser,
+				pm.schema_basic,
+				pm.addListNodes,
+				pm.exampleSetup,
+				pm.undo,
+				pm.redo,
+				pm.history,
+				pm.keymap,
+				pm.baseKeymap,
+				pm.chainCommands,
+				pm.exitCode
+			)
+		</script>
+
+	</body>
+</html>
