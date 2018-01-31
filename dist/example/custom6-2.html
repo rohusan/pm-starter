@@ -1,0 +1,178 @@
+
+<html>
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>Troubleshoot range has mark</title>
+
+	</head>
+	<body>
+		<div class="container">
+			<h1 class="title">Troubleshoot range has mark</h1>
+
+			<p class="szQuestion">
+				See this <a href="https://discuss.prosemirror.net/t/correct-rangehasmark-behaviour/1162" target="_blank">thread</a>
+			</p>
+
+			<p class="jsEditor"><a href="/">Link with <strong>strong</strong> text</a></p>
+
+		</div>
+
+		<script src="../js/basic2-core.js"></script>
+		<script>
+			(function(
+				EditorState,
+				EditorView,
+				Schema,
+				DOMParser,
+				schema,
+				addListNodes,
+				exampleSetup,
+				undo,
+				redo,
+				history,
+				keymap,
+				baseKeymap,
+				chainCommands,
+				exitCode,
+				toggleMark,
+				Plugin
+			)
+			{
+				// ***********************************************
+				// ************* Schema Definitions **************
+				// ***********************************************
+				const oDef = {
+					nodes: {
+						doc: {content: "inline*"},
+						text: { group: "inline"}
+					},
+					marks: {
+						// :: MarkSpec A link. Has `href` and `title` attributes. `title`
+						// defaults to the empty string. Rendered and parsed as an `<a>`
+						// element.
+						link: {
+							attrs: {
+								href: {},
+								// title: {default: null},
+								target: {default:null}
+							},
+							inclusive: false,
+							parseDOM: [{tag: "a[href]", getAttrs(dom) {
+								return {
+									href: dom.getAttribute("href"),
+									// title: dom.getAttribute("title"),
+									target: dom.getAttribute("target")
+								}
+							}}],
+							toDOM(node) { return ["a", node.attrs] }
+						},
+						strong: {
+							parseDOM: [
+								{tag: "strong"},
+								// This works around a Google Docs misbehavior where
+								// pasted content will be inexplicably wrapped in `<b>`
+								// tags with a font-weight normal.
+								{tag: "b", getAttrs: node => node.style.fontWeight != "normal" && null},
+								{style: "font-weight", getAttrs: value => /^(bold(er)?|[5-9]\d{2,})$/.test(value) && null}
+							],
+							toDOM() { return ["strong"] }
+						}
+					}
+				};
+				let oSchema = new Schema(oDef);
+
+				// ***********************************************
+				// ****************** PlugIn *********************
+				// ***********************************************
+				class CLinkView
+				{
+					constructor(oView)
+					{
+						this.oView = oView;
+					}
+
+					update()
+					{
+						let oState = this.oView.state;
+						let oSelection = oState.selection;
+						let oMarkType = this.oView.state.schema.marks.link;
+						let isLink = false;
+						let oDoc = oState.doc;
+						let o = { from: oSelection.from, to: oSelection.to };
+
+						// cursor position
+						if ( oSelection.empty )
+						{
+							isLink = oMarkType.isInSet(oState.storedMarks || oSelection.$cursor.marks()) ? true : false;
+						}
+						// text selection
+						else
+						{
+							isLink = oDoc.rangeHasMark(o.from, o.to, oMarkType)							
+						}
+						console.log('Link? ', isLink ? 'yes' : 'no');
+					}
+				}
+
+				class xCLinkView
+				{
+					constructor(oView)
+					{
+						this.oView = oView;
+					}
+
+					update()
+					{
+						let oState = this.oView.state;
+						let oSelection = oState.selection;
+						let oMarkType = oState.schema.marks.strong;
+
+						if ( oSelection.empty )
+						{
+							console.log('is in set: ', oMarkType.isInSet(oState.storedMarks || oSelection.$cursor.marks()))	
+						}
+					}
+				}
+
+
+
+
+
+				let oLinkPlugIn = new Plugin(
+				{
+					view(oView) { return new CLinkView(oView) }
+				});
+				let oDomEdit = document.getElementsByClassName('jsEditor')[0];
+
+				let oState = EditorState.create({
+					doc: DOMParser.fromSchema(oSchema).parse(oDomEdit),
+					schema: oSchema,
+					plugins: [ oLinkPlugIn ]
+				})
+				let oView = new EditorView({ mount: oDomEdit}, {state: oState})
+
+			})
+			(
+				pm.EditorState,
+				pm.EditorView,
+				pm.schema_model,
+				pm.DOMParser,
+				pm.schema_basic,
+				pm.addListNodes,
+				pm.exampleSetup,
+				pm.undo,
+				pm.redo,
+				pm.history,
+				pm.keymap,
+				pm.baseKeymap,
+				pm.chainCommands,
+				pm.exitCode,
+				pm.toggleMark,
+				pm.Plugin
+			)
+		</script>
+
+	</body>
+</html>

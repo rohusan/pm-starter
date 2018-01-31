@@ -1,0 +1,139 @@
+
+<html>
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>Custom: Editor View inline content</title>
+		<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic">
+		<link rel="stylesheet" href="//cdn.rawgit.com/necolas/normalize.css/master/normalize.css">
+		<link rel="stylesheet" href="//cdn.rawgit.com/milligram/milligram/master/dist/milligram.min.css">
+
+		<style>
+			#jsEditor {
+				border: 1px solid green;
+				font-size: 3em;
+				color: orange;
+			}
+			#jsEditor strong {
+				color: red;
+			}
+			#jsEditor em {
+				color: black;
+			}
+			.ProseMirror {
+				white-space: pre-wrap;
+			}
+
+
+			.szProblem, .szProblem a {
+				color: white;
+				background-color: red;
+				padding: 1em;
+			}
+			.szQuestion {
+				color: white;
+				background-color: green;
+				padding: 1em;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<h1 class="title">Custom: Editor View inline content</h1>
+			<h2>Problem</h2>
+			<p class="szProblem">
+				Marks get splitted. See this thread <a href="https://discuss.prosemirror.net/t/when-are-marks-splitted/1156" target="_blank">when are marks splitted</a>.
+			</p>
+
+
+			<h2>Solution</h2>
+			<ol>
+				<li>Mark definition order matters. If "em" is defined before "strong", "em" is not spiltted but "strong".</li>
+			</ol>
+
+			<h2>Editor</h2>
+			<p id="jsEditor">
+				<strong>Strong with <em>emphasized</em> text inside.</strong>
+				<em>Emphasized with <strong>strong</strong> text inside.</em>
+			</p>
+
+		</div>
+
+		<script src="../js/basic2-core.js"></script>
+		<script>
+			(function(
+				EditorState,
+				EditorView,
+				Schema,
+				DOMParser,
+				schema,
+				addListNodes,
+				exampleSetup,
+				undo,
+				redo,
+				history,
+				keymap,
+				baseKeymap
+			)
+			{
+				const oSchema = new Schema({
+					nodes: {
+						doc: {content: "text*"},
+						text: {}
+					},
+					marks: {
+						// higher priority: not splitted whenn other marks inside
+						em: {
+							parseDOM: [{tag: "i"}, {tag: "em"}, {style: "font-style=italic"}],
+							toDOM() { return ["em"] }
+						},
+						// lower priority: splitted when em is inside
+						strong: {
+							parseDOM: [
+								{tag: "strong"},
+								// This works around a Google Docs misbehavior where
+								// pasted content will be inexplicably wrapped in `<b>`
+								// tags with a font-weight normal.
+								{tag: "b", getAttrs: node => node.style.fontWeight != "normal" && null},
+								{style: "font-weight", getAttrs: value => /^(bold(er)?|[5-9]\d{2,})$/.test(value) && null}
+							],
+							toDOM() { return ["strong"] }
+						},
+						// em: {
+						// 	parseDOM: [{tag: "i"}, {tag: "em"}, {style: "font-style=italic"}],
+						// 	toDOM() { return ["em"] }
+						// }
+
+					}
+				})
+				let oDomEdit = document.getElementById('jsEditor');
+				let oState = EditorState.create({
+					doc: DOMParser.fromSchema(oSchema).parse(oDomEdit),
+					schema: oSchema,
+					plugins: [
+						history(),
+						keymap({"Mod-z": undo, "Mod-y": redo, "Mod-shift-z": redo}),
+						// keymap(baseKeymap)
+					]
+				})
+				let oView = new EditorView({ mount: oDomEdit}, {state: oState})
+			})
+			(
+				pm.EditorState,
+				pm.EditorView,
+				pm.schema_model,
+				pm.DOMParser,
+				pm.schema_basic,
+				pm.addListNodes,
+				pm.exampleSetup,
+				pm.undo,
+				pm.redo,
+				pm.history,
+				pm.keymap,
+				pm.baseKeymap
+			)
+		</script>
+
+	</body>
+</html>

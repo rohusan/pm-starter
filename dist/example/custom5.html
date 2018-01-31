@@ -167,7 +167,7 @@
 
 				Array.from(aDomEdit).forEach(function(o)
 				{
-					fnInit(o, o.dataset.pm ? o.dataset.pm : [])
+					fnInit(o, o.dataset.pm ? JSON.parse(o.dataset.pm) : [])
 				})
 
 			})

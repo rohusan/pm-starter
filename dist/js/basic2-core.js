@@ -28052,7 +28052,10 @@ var basic2Core = {
 	baseKeymap: commands_24$1,
 	chainCommands: commands_21$1,
 	exitCode: commands_10$1,
-	toggleMark: commands_19$1
+	toggleMark: commands_19$1,
+	Plugin: dist_8,
+	setBlockType: commands_18$1,
+	wrapIn: commands_17$1
 }
 
 return basic2Core;

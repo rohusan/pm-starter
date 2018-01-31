@@ -1,0 +1,223 @@
+<html>
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width">
+		<title>Example menu</title>
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+		<link rel="stylesheet" href="../css/style.css">
+		<link rel="stylesheet" href="../css/editor.css">
+		<meta property="og:type" content="website">
+		<meta property="og:title" content="Example menu">
+		<meta property="og:description" content="Example menu">
+		<!-- <meta property="og:site_name" content="Starter Template for bulma"> -->
+		<style>
+			#editor {
+				position: relative;
+				padding: 0;
+			}
+			.menubar {
+				padding: 0.25em;
+				background-color: black;
+				color: white;
+			}
+			.menuicon {
+				/* padding: 0.5em; */
+				border-radius: 1em;
+				background-color: rgba(255,0,0,0.3);
+				width: 2em;
+				height: 2em;
+				display: inline-block;
+				/* padding-left: 0.6em; */
+				text-align: center;
+				padding-top: 0.25em;
+				margin-right: 0.5em;
+				cursor: pointer;
+				font-weight: bold;
+			}
+			.menuicon:hover {
+				background-color: #ff1200;
+			}
+			.menuicon.set, .menuicon.set:hover {
+				cursor: auto;
+				background-color: #b93030;
+			}
+			h1 {
+				font-size: 1.75rem;
+				color: #000092;
+			}
+			h2 {
+				font-size: 1.5rem;
+				color: #bc7900;
+			}
+			h3 {
+				font-size: 1.3rem;
+				color: #a1a100;
+			}
+
+		</style>
+	</head>
+	<body>
+		<section class="hero is-primary">
+			<div class="hero-body">
+				<div class="container">
+					<h1 class="title">Example menu</h1>
+					<h2 class="subtitle">Building a custom editor menu bar.</h2>
+				</div>
+			</div>
+		</section>
+
+		<div id=editor style="margin-bottom: 23px"></div>
+		<div style="display: none" id="content">
+			<h3>Simple editor</h3>
+  			<p>With a very crude menu bar.</p>
+		</div>
+
+		<script src="../js/basic2-core.js"></script>
+		<script>
+			(function(
+				EditorState,
+				EditorView,
+				Schema,
+				DOMParser,
+				schema,
+				addListNodes,
+				exampleSetup,
+				Plugin,
+				toggleMark,
+				setBlockType,
+				wrapIn,
+				undo,
+				redo,
+				history,
+				keymap,
+				baseKeymap
+			)
+			{
+				// =============================================
+				//  PlugIn definition
+				// =============================================
+				//  class menu view
+				class MenuView {
+				  constructor(items, editorView) {
+				    this.items = items
+				    this.editorView = editorView
+
+				    this.dom = document.createElement("div")
+				    this.dom.className = "menubar"
+				    items.forEach(({dom}) => this.dom.appendChild(dom))
+				    this.update()
+
+				    this.dom.addEventListener("mousedown", e => {
+				      e.preventDefault()
+				      editorView.focus()
+				      items.forEach(({command, dom}) => {
+				        if (dom.contains(e.target))
+				          command(editorView.state, editorView.dispatch, editorView)
+				      })
+				    })
+				  }
+
+				  update() {
+				    this.items.forEach(({command, dom}) => {
+				      let active = command(this.editorView.state, null, this.editorView)
+				      // dom.style.display = active ? "" : "none"
+				      let vCmd = active ? 'remove':'add';
+				      dom.classList[vCmd]('set');
+				    })
+				  }
+
+				  destroy() { this.dom.remove() }
+				}
+
+				// Plugin view
+				function menuPlugin(items) {
+				  return new Plugin({
+				    view(editorView) {
+				      let menuView = new MenuView(items, editorView)
+				      // inserts menu into dom
+				      editorView.dom.parentNode.insertBefore(menuView.dom, editorView.dom)
+				      return menuView
+				    }
+				  })
+				}
+
+
+				// =============================================
+				//  Menu helper function
+				// =============================================
+				// Helper function to create menu icons
+				function icon(text, name) {
+				  let span = document.createElement("span")
+				  span.className = "menuicon " + name
+				  span.title = name
+				  span.textContent = text
+				  return span
+				}
+
+				// Create an icon for a heading at the given level
+				function heading(level) {
+				  return {
+				    command: setBlockType(schema.nodes.heading, {level}),
+				    dom: icon("H" + level, "xheading")
+				  }
+				}
+
+
+
+				let aDef = [
+				  {command: toggleMark(schema.marks.strong), dom: icon("B", "strong")},
+				  {command: toggleMark(schema.marks.em), dom: icon("i", "em")},
+				  {command: setBlockType(schema.nodes.paragraph), dom: icon("p", "paragraph")},
+				  heading(1), heading(2), heading(3),
+				  {command: wrapIn(schema.nodes.blockquote), dom: icon(">", "blockquote")}
+				]
+
+				// =============================================
+				//  Glue everything togehter
+				// =============================================
+
+				// Mix the nodes from prosemirror-schema-list into the basic schema to
+				// create a schema with list support.
+				// const mySchema = new Schema({
+				//   nodes: addListNodes(schema.spec.nodes, "paragraph block*", "block"),
+				//   marks: schema.spec.marks
+				// })
+
+				let oState = EditorState.create(
+				{
+					doc: DOMParser.fromSchema(schema).parse(document.querySelector("#content")),
+				 	plugins: [
+				 		history(),
+						keymap({"Mod-z": undo, "Mod-y": redo, "Mod-shift-z": redo}),
+				 		keymap(baseKeymap),
+				 		menu = menuPlugin(aDef)
+				    ]
+				});
+
+				window.view = new EditorView(document.querySelector("#editor"), {
+				  state: oState
+				})
+			})(
+				pm.EditorState,
+				pm.EditorView,
+				pm.schema_model,
+				pm.DOMParser,
+				pm.schema_basic,
+				pm.addListNodes,
+				pm.exampleSetup,
+				pm.Plugin,
+				pm.toggleMark,
+				pm.setBlockType,
+				pm.wrapIn,
+				pm.undo,
+				pm.redo,
+				pm.history,
+				pm.keymap,
+				pm.baseKeymap
+			)
+		</script>
+
+	</body>
+</html>

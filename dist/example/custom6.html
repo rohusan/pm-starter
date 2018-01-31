@@ -1,0 +1,591 @@
+
+<html>
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>Custom: link popup</title>
+		<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic">
+		<link rel="stylesheet" href="//cdn.rawgit.com/necolas/normalize.css/master/normalize.css">
+		<link rel="stylesheet" href="//cdn.rawgit.com/milligram/milligram/master/dist/milligram.min.css">
+		<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+		<style>
+			.jsEditor {
+				border: 1px dotted green;
+				/*font-size: 3em;*/
+				color: #555;
+			}
+			.jsEditor strong {
+				color: red;
+			}
+			.jsEditor em {
+				color: orange;
+			}
+			.jsEditor a {
+				color: blue;
+				text-decoration: underline;
+			}
+			.ProseMirror {
+				white-space: pre-wrap;
+			}
+
+
+			.szProblem {
+				color: white;
+				background-color: red;
+				padding: 1em;
+			}
+			.szQuestion {
+				color: white;
+				background-color: green;
+				padding: 1em;
+			}
+			#jsEditLink {
+				visibility: hidden;
+				position: absolute;
+				padding: 0.5em 0.5em 0;
+				background-color: #92b602;
+				border-radius: 0.5em;
+				overflow-x: hidden;
+				width: 320px;
+				color: white;
+			}
+			#jsEditLink input {
+				margin-bottom: 0.75rem;
+				background-color: white;
+			}
+			#jsEditLink .menu1 {
+				text-align: center;
+			}
+			#jsEditLink .menu1 small {
+				text-overflow: ellipsis;
+				white-space: nowrap;
+				display: block;
+				overflow: hidden;
+				/*color: white;*/
+				padding: 0 0 0.25em 0;
+			}
+			#jsEditLink a {
+				color: white;
+				padding: 1rem;
+				line-height: 5rem;
+				border-radius: 2rem;
+				background-color: #000000b3;
+				margin-right: 1rem;
+				transition: all 0.2s ease-in-out;
+				box-shadow: 0px 0px 3px 0px #0006;
+			}
+			#jsEditLink a:hover {
+				background-color: black;
+				box-shadow: 0px 0px 3px 2px #0006;
+			}
+
+			#jsEditLink .menu1,
+			#jsEditLink .menu2 {
+				display: none;
+			}
+			#jsEditLink.showDialog1,
+			#jsEditLink.showDialog2 {
+				visibility: visible;
+			}
+			#jsEditLink.showDialog1 .menu1 {
+				display: block;
+			}
+			#jsEditLink.showDialog2 .menu2 {
+				display: block;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<h1 class="title">Custom: link popup</h1>
+
+			<p class="szQuestion">
+				How can we handle links?
+			</p>
+
+			<h2>It's not easy...</h2>
+			<p>A few things need to be considered: decide if the cursor position or text seletion is within a link mark, open a dialog, handle events from dialog and fire commands, get position of link mark (complicated), remove link, update link, set new link (cmd-l), open link. Please investigate code.</p>
+
+
+			<p class="jsEditor" data-pm=["em","strong","a","br"]>(em, strong, a, br) Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore <a href='/'>m</a>agna aliquyam erat, sed diam voluptua. <strong>At <em>vero</em> eos et accusam et justo duo</strong> dolores et ea rebum. Stet clita kasd gubergren, <a href="https://discuss.prosemirror.net/t/does-prosemirror-match-my-editor-requirements/1073" target="_blank">no sea takimata sanctus</a> est Lorem ipsum dolor sit amet.<br><strong>Lorem ipsum dolor</strong> sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. <em>Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.</em></p>
+
+		</div>
+
+		<div id="jsEditLink">
+			<div class="menu1">
+				<a href="edit" data-ref='edit'>
+					<i class="fa fa-pencil fa-lg"> edit</i>
+				</a>
+				<a href="follow" target="_blank"  data-ref='open'>
+					<i class="fa fa-external-link fa-lg"></i>
+				</a>
+				<a href="remove"  data-ref='remove' title="remove link">
+					<i class="fa fa-chain-broken fa-lg"></i>
+				</a>
+				<small data-ref='address'></small>
+			</div>
+			<div class="menu2">
+				<input placeholder="https://..." name="url" type="text" data-ref='url'>
+				<input data-ref='isTarget' id="isTarget" type="checkbox" name='isTarget' value=''><label class="label-inline" for="isTarget">Open in new tab</label>
+				<div>
+					<a href="save"  data-ref='save' title="save link">
+						<i class="fa fa-save fa-lg"> save</i>
+					</a>
+					<a href="close"  data-ref='close' title="close">
+						<i class="fa fa-times fa-lg"> close</i>
+					</a>
+				</div>
+			</div>
+		</div>
+
+		<script src="../js/basic2-core.js"></script>
+		<script>
+			(function(
+				EditorState,
+				EditorView,
+				Schema,
+				DOMParser,
+				schema,
+				addListNodes,
+				exampleSetup,
+				undo,
+				redo,
+				history,
+				keymap,
+				baseKeymap,
+				chainCommands,
+				exitCode,
+				toggleMark,
+				Plugin
+			)
+			{
+				// ***********************************************
+				// ************* Schema Definitions **************
+				// ***********************************************
+				const oDefSchema = {
+					nodes: {
+						doc: {content: "inline*"},
+						text: { group: "inline"},
+						soft_break: {
+							inline: true,
+							group: "inline",
+							selectable: false,
+							parseDOM: [{tag: "br"}],
+							toDOM() { return ["br"] }
+						}
+					},
+					marks: {
+						// :: MarkSpec A link. Has `href` and `title` attributes. `title`
+						// defaults to the empty string. Rendered and parsed as an `<a>`
+						// element.
+						link: {
+							attrs: {
+								href: {},
+								// title: {default: null},
+								target: {default:null}
+							},
+							inclusive: false,
+							parseDOM: [{tag: "a[href]", getAttrs(dom) {
+								return {
+									href: dom.getAttribute("href"),
+									// title: dom.getAttribute("title"),
+									target: dom.getAttribute("target")
+								}
+							}}],
+							toDOM(node) { return ["a", node.attrs] }
+						},
+						strong: {
+							parseDOM: [
+								{tag: "strong"},
+								// This works around a Google Docs misbehavior where
+								// pasted content will be inexplicably wrapped in `<b>`
+								// tags with a font-weight normal.
+								{tag: "b", getAttrs: node => node.style.fontWeight != "normal" && null},
+								{style: "font-weight", getAttrs: value => /^(bold(er)?|[5-9]\d{2,})$/.test(value) && null}
+							],
+							toDOM() { return ["strong"] }
+						},
+						em: {
+							parseDOM: [{tag: "i"}, {tag: "em"}, {style: "font-style=italic"}],
+							toDOM() { return ["em"] }
+						}
+					}
+				};
+
+				// ***********************************************
+				// ************** Link PlugIn ********************
+				// ***********************************************
+				class CLinkView
+				{
+					constructor(oView, oCore)
+					{
+						this.oView = oView;
+						this.oCore = oCore;
+						this.oMarkType = oView.state.schema.marks.link;
+					}
+
+					update()
+					{
+						if ( ! this.oMarkType ) { return false; }
+
+						// todo: run only for cursor position & text selection
+
+						// check if selection matches whole or part of link
+						if ( oCore._mIsLink(this.oView) ) { oCore.mShowDialog(this.oView); return true; }
+						oCore._mCloseDialog();
+						return true;
+					}
+
+					destroy()
+					{
+						// this.dom.remove()
+					}
+				}				
+
+				// ***********************************************
+				// ****************** Core Class *****************
+				// ***********************************************
+				class CCore
+				{
+					constructor(oDef, vSelector)
+					{
+						this.oDef = oDef;
+						this.aDomEdit = document.getElementsByClassName(vSelector);
+						this.oDialog = false;
+						this._mInitDialog();
+						this.fnEvent = {};
+					}
+					// ============================================
+					// link stuff
+					// ============================================
+					mUnlink(oState, fnDispatch, oView)
+					{
+						if ( ! this._mIsLink(oView) ) { return; }
+
+						let oPos = this._mGetMarkPos(oState, 'link');
+						let oTransaction = oState.tr.removeMark(oPos.from, oPos.to, oState.schema.marks.link);
+						fnDispatch(oTransaction);
+						return true;
+					}
+					mSetLink(oState, fnDispatch, oView)
+					{
+						// set selection
+						let oPos =  { from: oState.selection.from, to: oState.selection.to };
+						// get mark positions
+						this._mIsLink(oView) && ( oPos = this._mGetMarkPos(oState, 'link') );
+
+						let vUrl = this.oDialog.url.value;
+						let oAttr = { href: vUrl };
+						this.oDialog.isTarget.checked && (oAttr.target = "_blank");
+
+						let oMarkType = oState.schema.marks.link;
+						let oTransaction = oState.tr
+							.removeMark(oPos.from, oPos.to, oMarkType)
+							.addMark(oPos.from, oPos.to, oMarkType.create(oAttr))
+
+						fnDispatch(oTransaction);
+						this._mCloseDialog();
+						return true;
+					}
+
+					// ============================================
+					// newline stuff
+					// ============================================
+					mNewLine(oState, fnDispatch)
+					{
+						let oSchema = oState.schema;
+						if ( oSchema.nodes.soft_break === undefined ) { return true; }
+						let oNode = oSchema.nodes['soft_break'].create();
+						let oTransaction = oState.tr.replaceSelectionWith(oNode).scrollIntoView();
+						fnDispatch(oTransaction);
+						return true;
+					}
+					// ============================================
+					// helper stuff
+					// ============================================
+					mStart(fn)
+					{
+						Array.from(this.aDomEdit).forEach(function(o)
+						{
+							fn(o, o.dataset.pm ? JSON.parse(o.dataset.pm) : [])
+						})
+					}
+					// return schema
+					// a: eg [em, br], [strong, em, br]
+					mBuildSchema(a)
+					{
+						let oDef = this.oDef;
+						let o = {
+							nodes: { doc: oDef.nodes.doc, text: oDef.nodes.text },
+							marks: {}
+						}
+						// soft break
+						if ( a.indexOf('br') > -1 ) { o.nodes.soft_break = oDef.nodes.soft_break; }
+						let c = this.oDef.marks;
+						// get mark properties as array back
+						let aMark = Object.keys(c);
+						// iterate marks, order matters
+						aMark.forEach(function(v)
+						{
+							if ( ! c[v] ) { return; }
+							o.marks[v] = c[v];
+						});
+						return new Schema(o);
+					}
+					_mIsLink(oView)
+					{
+					// todo -> special case: selection between two links!
+						let oSelection = oView.state.selection;
+						// to speed up things check first cursor only movement
+						if ( oSelection.empty ) { return this._mRangeHasLink(oView) }
+
+						// now check selection
+						let {from, to} = oSelection;
+						// set a range of one char
+						let o = {
+							start: { from: from, to: from + 1 },
+							end: { from: to - 1, to: to }
+						}
+						return this._mRangeHasLink(oView, o.start) && this._mRangeHasLink(oView, o.end);
+					}
+					_mRangeHasLink(oView, o)
+					{
+						let isLink = false;
+						let oState = oView.state;
+						let oMarkType = oState.schema.marks.link;
+						let oDoc = oState.doc;
+						if ( o ) { isLink = oDoc.rangeHasMark(o.from, o.to, oMarkType); }
+						else { isLink = oMarkType.isInSet(oState.storedMarks || oState.selection.$cursor.marks()) }
+						return isLink;
+					}
+					_mGetMark(oState, vMarkName)
+					{
+						let o = false;
+						let oSelection = oState.selection;
+						oState.doc.nodesBetween(oSelection.from, oSelection.to, function(oNode, oPos)
+						{
+							let aMark = oNode.marks;
+							aMark.every( function(oMark)
+							{
+								if ( oMark.type.name === vMarkName ) { o = oMark; return false; }
+								return true;
+							})
+							return true;
+						});
+						return o;
+					}
+					_mGetMarkPos(oState, vMarkName)
+					{
+						let oCursor = oState.doc.resolve(oState.selection.from);
+						let oMarkType = oState.schema.marks[vMarkName];
+						return this._mMarkExtend(oCursor, oMarkType);
+					}
+					_mMarkExtend (oCursor, oMarkType)
+					{
+						let oParent = oCursor.parent;
+						let oPos = {
+							oIndex: { vStart: oCursor.index(), vEnd: oCursor.indexAfter() },
+							oMark: { vStart: oCursor.start(), vEnd: oCursor.start() }
+						}
+						let oI = oPos.oIndex;
+						let oM = oPos.oMark;
+
+						const hasMark = i => 
+						oMarkType.isInSet(oParent.child(i).marks)
+
+						// Clicked outside edge of tag.
+						if (oI.vStart === oParent.childCount) { oI.vStart--; }
+						while (oI.vStart > 0 && hasMark(oI.vStart)) { oI.vStart--; }
+						while ( oI.vEnd < oParent.childCount && hasMark(oI.vEnd)) { oI.vEnd++ }
+
+						for (let i = 0; i < oI.vEnd; i++)
+						{
+							let vSize = oParent.child(i).nodeSize;
+							if (i <= oI.vStart) oM.vStart += vSize;
+							oM.vEnd += vSize;
+							// console.log(i + ': ', vSize + ' (size), ' + oM.vStart +' (start), ' + oM.vEnd + ' (end)');
+						}
+						return { from: oM.vStart, to: oM.vEnd };
+					}
+
+					_mGetDom(v, o) { o || (o = document); return o.querySelectorAll(v); }
+
+					// ============================================
+					// dialog stuff
+					// ============================================
+					_mInitDialog()
+					{
+						this.oDialog = {
+							isOpen: false,
+							p: document.getElementById("jsEditLink")
+						}
+						// get all references
+						let oNodeList = this._mGetDom("[data-ref]", this.oDialog.p);
+						for (let i = 0; i < oNodeList.length; ++i)
+						{
+							let oEl = oNodeList[i];
+							let vName = oEl.getAttribute('data-ref')
+							this.oDialog[vName] = oEl;
+						}
+					}
+					mShowDialog(oView, fn, oV)
+					{
+						// command puts oState, fnDispatch, oView
+						if ( oV && oV.dispatch ) { oView = oV; }
+
+						let o = this.oDialog;
+						// already opened
+						if ( o.isOpen ) { return; }
+
+						// state changes with every update don't assign it in constructor
+						let oState = oView.state;
+						this._mFillDialog(o, oState)
+						this._mPosDialog(o.p, oView, oState.selection)
+						this._mOpenDialog(oV?2:1);
+
+						// remove event handler
+						o.p.removeEventListener('click', this.fnEvent);
+						// set event handler
+						this.fnEvent = this._mEventDialog.bind(this, oView);
+						o.p.addEventListener('click', this.fnEvent);
+					}
+					_mEventDialog(oView, e)
+					{
+						let oEl = e.target;
+						let vAction = e.target.dataset.ref || e.target.parentNode.dataset.ref;
+						// open url, checkbox
+						if ( vAction === 'open' || vAction === 'isTarget' ) { return; }
+						// prevent default click behaviour
+						e.preventDefault();
+						let oState = oView.state;
+						let fnDispatch = oView.dispatch;
+						// remove link
+						if ( vAction === 'remove' ) { this.mUnlink(oState, fnDispatch, oView); }
+						// show edit dialog
+						else if ( vAction === 'edit' ) { this._mOpenDialog(2); }
+						// set link attribute
+						else if ( vAction === 'save' )
+						{
+							this.mSetLink(oState, fnDispatch, oView);
+						}
+						// close dialog
+						else if ( vAction === 'close' ) { this._mCloseDialog(); }
+						// don't focus view
+						else { return; }
+						oView.focus();
+					}
+					_mFillDialog(o, oState)
+					{
+						// default setting
+						let oAttr = {
+							href: '',
+							target: '_blank'
+						}
+						// get attribute
+						let oMark = this._mGetMark(oState, 'link')
+						oMark && ( oAttr = oMark.attrs );
+
+						// fill dialog
+						o.address &&  (o.address.innerHTML = oAttr.href);
+						o.open.title = "open " + oAttr.href;
+						o.open.href = oAttr.href;
+						o.url.value = oAttr.href;
+						o.isTarget.checked = oAttr.target === '_blank';
+					}
+					_mOpenDialog(n)
+					{
+						let o = this.oDialog;
+						// if ( o.isOpen ) { return; }
+						o.isOpen = true;
+						o = o.p.classList;
+						o.remove('showDialog1', 'showDialog2');
+						o.add('showDialog'+n);
+					}
+					_mCloseDialog()
+					{
+						let o = this.oDialog;
+						// if ( ! o.isOpen ) { return; }
+						o.isOpen = false;
+						o = o.p.classList;
+						o.remove('showDialog1', 'showDialog2');
+					}
+					_mPosDialog(o, oView, oSelection)
+					{
+						let oPos = {
+							from: oView.coordsAtPos(oSelection.from),
+							to: oView.coordsAtPos(oSelection.to),
+							wDialog: this.oDialog.p.offsetWidth,
+							wScreen: window.innerWidth
+						}
+
+						oPos.top = oPos.from.bottom + 5 +"px";
+						oPos.left = Math.max((oPos.from.left + oPos.to.left)/2 - oPos.wDialog/2);
+						// to much to the left
+						if (oPos.left < 10 ) { oPos.left = '10px'; }
+						// too much to the right
+						if (oPos.left > oPos.wScreen - oPos.wDialog) { oPos.left = oPos.wScreen - oPos.wDialog - 10 }
+						o.style.top = oPos.top;
+						o.style.left = oPos.left
+					}
+				}
+
+				// ***********************************************
+				// ***************** Initialize ******************
+				// ***********************************************
+
+				let oCore = new CCore(oDefSchema, 'jsEditor')
+				// init callback function
+				let fnInit = function(oDomEdit, aTag)
+				{
+					let oSchema = oCore.mBuildSchema(aTag);
+					let oLinkPlugIn = new Plugin(
+					{
+						view(oView) { return new CLinkView(oView, oCore) }
+					});
+
+					let oState = EditorState.create({
+						doc: DOMParser.fromSchema(oSchema).parse(oDomEdit),
+						schema: oSchema,
+						plugins: [
+							history(),
+							keymap({
+								"Mod-z": undo,
+								"Mod-y": redo,
+								"Mod-shift-z": redo,
+								"Enter": chainCommands(exitCode, oCore.mNewLine.bind(oCore)),
+								"Mod-b": oSchema.marks.strong ? toggleMark(oSchema.marks.strong) : false,
+								"Mod-i": oSchema.marks.em ? toggleMark(oSchema.marks.em) : false,
+								"Mod-l": oSchema.marks.link ? oCore.mShowDialog.bind(oCore) : false
+							}),
+							oLinkPlugIn
+						]
+					})
+					let oView = new EditorView({ mount: oDomEdit}, {state: oState})
+				}
+				// start
+				oCore.mStart(fnInit);
+			})
+			(
+				pm.EditorState,
+				pm.EditorView,
+				pm.schema_model,
+				pm.DOMParser,
+				pm.schema_basic,
+				pm.addListNodes,
+				pm.exampleSetup,
+				pm.undo,
+				pm.redo,
+				pm.history,
+				pm.keymap,
+				pm.baseKeymap,
+				pm.chainCommands,
+				pm.exitCode,
+				pm.toggleMark,
+				pm.Plugin
+			)
+		</script>
+
+	</body>
+</html>
