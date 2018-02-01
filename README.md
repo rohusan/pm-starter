@@ -10,7 +10,7 @@ You need a build system like browserify, webpack or rollup to use it in a browse
 
 We are used to include some js scripts from a cdn server and try it out instantly. ProseMirror works differently as it has many es6 modules which needs to be bundled or loaded dynamically through node server. Setting up the dev environment [didn't work out for me](https://discuss.prosemirror.net/t/setting-up-dev-environment-fails/1078).
 
-My goal is to have one ProseMirror core file with all dependencies. This file can than be loaded in the browser and used for the example codes. Most important part: no further building is needed.
+My goal is to have one ProseMirror core file with all dependencies. This file can be loaded in the browser and used for the example codes. Most important part: no further building is needed.
 
 
 ## Start instantly

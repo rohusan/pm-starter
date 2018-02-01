@@ -1,5 +1,6 @@
 import nodeResolve from 'rollup-plugin-node-resolve';
 import commonjs from 'rollup-plugin-commonjs';
+import uglify from 'rollup-plugin-uglify';
 
 export default {
 	input: './src/basic2-core.js',
@@ -13,6 +14,7 @@ export default {
 	plugins: [
 		commonjs(),
 		require("rollup-plugin-buble")(),
+		uglify(),
 		nodeResolve({
 			// pass custom options to the resolve plugin
 			customResolveOptions: {
